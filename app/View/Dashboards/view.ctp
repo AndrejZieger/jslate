@@ -19,7 +19,9 @@
                 echo $this->Html->link('edit', "/dbviews/edit/$id", array('style' =>'float: right;'));
                 echo "</span>";
             echo "</div>
-            <div class='dragbox-content' id='view$id' style='clear: both; width: ".($dbview['width']-10)."px; height: ".($dbview['height']-30)."px;'>$code</div>
+            <div class='dragbox-content' id='view$id' style='clear: both; width: ".($dbview['width']-10)."px; height: ".($dbview['height']-30)."px;'>".
+            str_replace($replacements['search'], $replacements['replace'], $code)
+            ."</div>
         </div>";
     }
     ?>

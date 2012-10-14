@@ -25,8 +25,22 @@ class DashboardsController extends AppController {
 		}
         $dashboard = $this->Dashboard->read(null, $id);
         if(!empty($dashboard) && $dashboard['Dashboard']['user_id'] === $this->Auth->user('id')){
-             $this->set('dashboard_id', $id);
-             $this->set('dashboard', $dashboard);
+        	// Get more parameters
+        	$replacements = array( 'search'=>array() , 'replace'=>array() );
+        	$argsnum = func_num_args();
+        	if($argsnum >= 2){
+        		$cur = 1;
+        		$arguments = func_get_args();
+        		while($cur+1 < $argsnum){
+        			$replacements['search'] = '&('.$arguments[$cur].')';
+        			++$cur;
+        			$replacements['replace'] = $arguments[$cur];
+        			++$cur;
+        		}
+        	}
+        	$this->set('replacements',$replacements);
+            $this->set('dashboard_id', $id);
+            $this->set('dashboard', $dashboard);
         }else{
         	$this->Session->setFlash('Invalid dashboard'.print_r($dashboard,true)." for user ".$this->Auth->user('id'));
             $this->redirect(array('action' => 'index'));
