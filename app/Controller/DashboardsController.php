@@ -23,9 +23,45 @@ class DashboardsController extends AppController {
                     $this->Session->setFlash(__('Invalid dashboard', true));
                     $this->redirect(array('action' => 'index'));
 		}
-        $dashboard = $this->Dashboard->read(null, $id);
+    
+		
+		if(!((int)$id) && is_string($id)){ // We've given a type, search or create
+			// For now just find the first one. 
+			$dashboard = $this->Dashboard->find('first',array('conditions'=>array('type'=>$id,'user_id'=>$this->Auth->user('id'))));
+
+			
+			if(empty($dashboard) || !is_array($dashboard)){
+				// Create a new one with this type!
+				$data = array('Dashboard'=>array('name'=>ucfirst($id),'type'=>$id,'user_id'=>$this->Auth->user('id')));
+				$this->Dashboard->create($data);
+				
+				if ($this->Dashboard->save($this->data)) {
+        			$this->Session->setFlash(__("A dashboard of type $id has been created", true));
+        			$id = $this->Dashboard->id;
+	        		// Maybe we should redirect?
+	        		//$this->redirect(array('action' => 'view', $this->Dashboard->getLastInsertId()));
+	        		// Because we do no redirect, we need to load the list again... this is stupid!
+        			$this->set('dblist', $this->Dashboard->find('list', array(
+        					'conditions' => array(
+        							'user_id' => $this->Auth->user('id')
+        					)
+        			)));
+	        	} else {
+	        		$this->Session->setFlash(__('The dashboard could not be saved. And none of the given type was found.', true));
+	        	}
+			}else{
+				$id = $dashboard['Dashboard']['id'];
+			}
+		}
+		
+		if((int)$id){ // Lets assume, we got an int and it's an id
+			CakeLog::write('debug', 'Will load id: '.$id);
+        	$dashboard = $this->Dashboard->read(null, $id);
+        	CakeLog::write('debug', 'Will show: '.print_r($dashboard,true));
+		}
         if(!empty($dashboard) && $dashboard['Dashboard']['user_id'] === $this->Auth->user('id')){
-        	// Get more parameters
+        	// Get more parameters into the js code by replacing &(var)
+        	// the url for that is /dashboards/view/id/var1/value1/var2/value2...
         	$replacements = array( 'search'=>array() , 'replace'=>array() );
         	$argsnum = func_num_args();
         	if($argsnum >= 2){
@@ -42,7 +78,7 @@ class DashboardsController extends AppController {
             $this->set('dashboard_id', $id);
             $this->set('dashboard', $dashboard);
         }else{
-        	$this->Session->setFlash('Invalid dashboard'.print_r($dashboard,true)." for user ".$this->Auth->user('id'));
+        	$this->Session->setFlash('Invalid dashboard');
             $this->redirect(array('action' => 'index'));
         }
 	}
